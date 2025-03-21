@@ -1,0 +1,14 @@
+# Ignore virtual environment directory
+.venv/
+
+# Ignore node_modules directory
+node_modules/
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Optional: Ignore logs and temporary files
+*.log
+*.tmp
