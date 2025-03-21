@@ -4,14 +4,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from django.contrib.auth.models import User
-from .serializers import UserSerializer,ProjectSerializer,UserProjectsSerializer,TravelSerializer
+from .serializers import UserSerializer,ProjectSerializer,TravelSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import Project,UserProjects,Travel
+from .models import Project,Travel
 from .error_handler import serializer_error_handler
 from rest_framework.views import APIView
 
 class UserViewset(viewsets.ModelViewSet):
-    queryset=User.objects.exclude(is_staff=True)
+    queryset=User.objects.all()
     serializer_class=UserSerializer
 
     def create(self, request, *args, **kwargs):
@@ -22,7 +22,7 @@ class UserViewset(viewsets.ModelViewSet):
         else:
             return Response(serializer_error_handler(serializer.errors,"detail"),status=status.HTTP_400_BAD_REQUEST)
 
-
+    
 
 class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes=[IsAuthenticated]
@@ -48,4 +48,19 @@ class TravelViewSet(viewsets.ModelViewSet):
         return Travel.objects.filter(user=user)
     
     def perform_create(self, serializer):
+       
+        if not self.request.user.is_staff:
+            self.request.data.pop("status", None)
         serializer.save(user=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        
+        if not request.user.is_staff:
+            request.data.pop("status", None)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        
+        if not request.user.is_staff:
+            request.data.pop("status", None)
+        return super().partial_update(request, *args, **kwargs)

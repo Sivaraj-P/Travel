@@ -6,19 +6,17 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import img from "../assets/bg1.svg"
 import Navbar from "../components/NavBar";
-import { API_BASE_URL } from "../services/api";
+import { useApi } from '../services/api';
+
 
 function FormPage() {
-  const modes = ["flight", "TRANSCO", "TANGEDCO"];
+  const modes = ["flight", "train", "cab"];
   const { token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [districts, setDistricts] = useState([]);
-  const [projects, setProjects] = useState([]);
+const { travelPost, projectGET } = useApi();
 
-  const [areas, setAreas] = useState([]);
-  const [districtId, setDistrictId] = useState("");
-  const [areaId, setAreaId] = useState("");
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -32,14 +30,7 @@ function FormPage() {
 
   const fetchProjectsList = async () => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/projects/`,
-        {
-          headers: {
-            Authorization: `Bearer ${token.access}`,
-          },
-        }
-      );
+      const response = await projectGET();
 
       const data = response.data;
       setProjects(data)
@@ -59,37 +50,17 @@ function FormPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "district") {
-      const selectedDistrict = districts.find(d => d._id === value);
-      setDistrictId(value);
-      setFormData((prev) => ({ ...prev, district: selectedDistrict ? selectedDistrict.name : "" }));
-    } else if (name === "area") {
-      const selectedArea = areas.find(a => a._id === value);
-      setAreaId(value);
-      setFormData((prev) => ({ ...prev, area: selectedArea ? selectedArea.name : "" }));
-    } else {
+   
       setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // if (!token) return toast.error("Session expired."), logout(), navigate("/");
-    // const requiredFields = ["project", "date", "purpose", "start_location", "end_location", "mode", "area", "incharge"];
-  // for (const field of requiredFields) {
-  //   if (!formData[field].trim()) {
-  //     toast.error(`Please fill out the ${field.replace(/([A-Z])/g, " $1").toLowerCase()} field.`);
-  //     setLoading(false);
-  //     return;
-  //   }
-  // }
+   
     try {
-      await axios.post(`${API_BASE_URL}/travel/`, formData, {
-        headers: {
-          Authorization: `Bearer ${token.access}`,
-        },
-      });
+      await travelPost(formData);
       toast.success("Data submitted successfully!");
       setTimeout(() => navigate("/table"), 2000);
       handleReset();
@@ -102,9 +73,7 @@ function FormPage() {
 
   const handleReset = () => {
     setFormData({ project: "", date: "", purpose: "", start_location: "", end_location: "", mode: ""});
-    setDistrictId("");
-    setAreaId("");
-    setAreas([]);
+    
     setLoading(false);
   };
 

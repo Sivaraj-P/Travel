@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 
 
 
+
 class Project(models.Model):
     name=models.CharField(max_length=255)
     is_active=models.BooleanField()
@@ -12,16 +13,10 @@ class Project(models.Model):
         return self.name
     
 
-class UserProjects(models.Model):
-    user=models.ForeignKey(User,on_delete=models.PROTECT,related_name="user_projects")
-    project=models.ManyToManyField(Project,related_name="projects")
-    
-    def __str__(self):
-        return f"{self.user.username}"
-
 TRAVEL_MODE=(
     ("flight","BY FLIGHT"),
     ("train","BY TRAIN"),
+    ("cab","BY CAB"),
 )
 
 

@@ -5,11 +5,11 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import img from "../assets/bg1.svg";
 import Navbar from "../components/NavBar";
-import { API_BASE_URL } from "../services/api";
+// import { API_BASE_URL, projectGET, projectPOST } from "../services/api";
+import { useApi } from '../services/api';
 
 function ProjectPage() {
   const { token } = useContext(AuthContext);
-  const [projects, setProjects] = useState([]);
   const [responseData, setResponseData] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
   const [showModal, setShowModal] = useState(false);
@@ -18,15 +18,14 @@ function ProjectPage() {
     description: "",
     is_active: true,
   });
+const { projectPOST, projectGET } = useApi();
+
 
   // Fetch projects
   const fetchProjectsList = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/projects/`, {
-        headers: { Authorization: `Bearer ${token.access}` },
-      });
+      const response = await projectGET();
       setResponseData(response.data);
-      setProjects(response.data);
     } catch (error) {
       console.error("Error fetching projects", error);
     }
@@ -69,11 +68,7 @@ function ProjectPage() {
   }
   const handleAddProject = async () => {
     try {
-      await axios.post(
-        `${API_BASE_URL}/projects/`,
-        formData,
-        { headers: { Authorization: `Bearer ${token.access}` } }
-      );
+      await projectPOST(formData);
       toast.success("Project added successfully!");
       setShowModal(false);
       handleReset()

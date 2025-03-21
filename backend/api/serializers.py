@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Project,UserProjects,Travel
+from .models import Project,Travel
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -37,12 +37,6 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = '__all__'
 
-class UserProjectsSerializer(serializers.ModelSerializer):
-    project = ProjectSerializer(many=True)
-
-    class Meta:
-        model = UserProjects
-        fields = ['project']
 
 class TravelSerializer(serializers.ModelSerializer):
     project_name = serializers.ReadOnlyField(source="project.name")  

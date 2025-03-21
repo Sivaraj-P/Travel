@@ -9,12 +9,13 @@ import { ToastContainer, toast } from "react-toastify";
 import { saveAs } from "file-saver";
 import "react-toastify/dist/ReactToastify.css";
 import img from "../assets/bg1.svg"
-import { FaPrint, FaFileExcel, FaFilePdf, FaUpload, FaCloudUploadAlt, FaSearch, FaDownload, FaTimes, FaCheck } from "react-icons/fa";
+import {  FaTimes, FaCheck } from "react-icons/fa";
 import { AiOutlineSortAscending, AiOutlineSortDescending } from "react-icons/ai";
 import Navbar from "../components/NavBar";
 import url from "../assets/data.xlsx"
-import { API_BASE_URL } from "../services/api";
+// import { API_BASE_URL, travelGET } from "../services/api";
 import Modal from 'react-modal';
+import { useApi } from '../services/api';
 
 
 const Table = () => {
@@ -35,6 +36,7 @@ const Table = () => {
   const [editStatusDialogOpen, setEditStatusDialogOpen] = useState(false); // Manage dialog open state
   const [currentStatus, setCurrentStatus] = useState(false); // Store the current status to update it
   const [currentid, setCurrentId] = useState("");
+  const { travelGET,travelPATCH } = useApi();
 
   useEffect(() => {
     fetchData();
@@ -43,76 +45,20 @@ const Table = () => {
 
   const fetchData = async () => {
     try {
-      const { data } = await axios.get(`${API_BASE_URL}/travel/`, {
-        headers: {
-          Authorization: `Bearer ${token.access}`,
-        },
-      });
+      const { data } = await travelGET();
       setData(data);
     } catch ({ response, message }) {
       console.error(" Error fetching data:", response?.data || message);
       if (response?.status === 401) handleLogout();
     }
   };
-  const handleFileChange = (event) => {
-    setFiles(Array.from(event.target.files));
-  };
 
-  const handleUpload = async () => {
-    if (!files.length) return toast("Please select files to upload.");
-
-    setUploading(true);
-    const formData = new FormData();
-    files.forEach((file) => formData.append("file", file));
-
-    try {
-      const { data } = await axios.post("http://10.10.192.179:5001/upload", formData, {
-        withCredentials: true,
-      });
-      toast(data.message);
-      setShowUploadModal(false);
-      setFiles([]);
-      if (data.invalidRows?.length) {
-        setErrorData(data.invalidRows.map(rows => rows.error));
-        setShowErrorModal(true);
-      }
-      fetchData();
-    } catch ({ response }) {
-      console.error("File upload failed:", response?.data?.message);
-      toast(response?.data?.message || "File upload failed.");
-    } finally {
-      setUploading(false);
-    }
-  };
+ 
   const handleLogout = () => {
     logout();
     navigate("/");
   };
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileChange({ target: { files: e.dataTransfer.files } });
-    }
-  };
-  const handleRecordsPerPageChange = (event) => {
-    setRecordsPerPage(Number(event.target.value));
-    setCurrentPage(1);
-  };
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-    setCurrentPage(1);
-  };
+
   const sortData = (data, field, order) => {
     return [...data].sort((a, b) => {
       if (a[field] < b[field]) return order === 'asc' ? -1 : 1;
@@ -160,91 +106,17 @@ const Table = () => {
     id: pkg.id,
     slideIndex: index
   })) || [];
-  const highlightMatch = (text, term) => {
-    if (!term) return text;
-    const parts = text?.split(new RegExp(`(${term})`, 'gi'));
-    return parts?.map((part, index) =>
-      part.toLowerCase() === term.toLowerCase() ? <span key={index} className="bg-yellow-300">{part}</span> : part
-    );
-  };
+ 
 
-  const handlePrint = () => {
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write("<html><head><title>Print Table</title></head><body>");
-    printWindow.document.write("<h2>Data Table</h2>");
-    printWindow.document.write("<table border='1' style='border-collapse: collapse; width: 100%; text-align: left;'>");
-    printWindow.document.write("<tr><th>Department</th><th>Date</th><th>Daily Production</th><th>Daily Consumption</th><th>Distribution Charges</th><th>District</th><th>Area</th><th>In-Charge</th></tr>");
-
-    data.forEach((item) => {
-      printWindow.document.write(
-        `<tr>
-          <td>${item.department}</td>
-          <td>${item.date}</td>
-          <td>${item.dailyProduction}</td>
-          <td>${item.dailyConsumption}</td>
-          <td>${item.distributionCharges}</td>
-          <td>${item.district}</td>
-          <td>${item.area}</td>
-          <td>${item.incharge}</td>
-        </tr>`
-      );
-    });
-
-    printWindow.document.write("</table></body></html>");
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Data Table", 20, 10);
-
-    const tableColumn = ["Project Name", "User Name", "Purpose", "Start Location", "End Location", "Mode", "Date", "Status"];
-    const tableRows = data.map((item) => [
-      item.project_name,
-      item.user_name,
-      item.purpose,
-      item.start_location,
-      item.end_location,
-      item.mode,
-      item.date,
-      item.status,
+ 
 
 
-    ]);
-
-    doc.autoTable({ head: [tableColumn], body: tableRows });
-    doc.save("data_table.pdf");
-  };
-
-  const handleExportExcel = () => {
-    // eslint-disable-next-line no-unused-vars
-    const exportData = data.map(({ _id, __v, ...rest }) => rest);
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    const fileData = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    saveAs(fileData, "data_table.xlsx");
-  };
   const handleSort = (field) => {
     const order = sortField === field && sortOrder === 'asc' ? 'desc' : 'asc';
     setSortField(field);
     setSortOrder(order);
   };
-  // const downloadSampleData = () => {
-  //   const fileUrl = url; 
-  //   const a = document.createElement("a");
-  //   a.href = fileUrl;
-  //   a.download = "sample_data.xlsx";
-  //   document.body.appendChild(a);
-  //   a.click();
-  //   document.body.removeChild(a);
-  // };
-  const downloadSampleData = () => {
-    saveAs(url, "sample_data.xlsx");
-  };
-
+ 
 
 
 
@@ -258,11 +130,7 @@ const Table = () => {
   const handleStatusChange = async (id) => {
     try {
       //  const updatedStatus = !currentStatus;
-      const response = await axios.patch(`${API_BASE_URL}/travel/${id}/`, { status: currentStatus }, {
-        headers: {
-          Authorization: `Bearer ${token.access}`,
-        },
-      });
+      const response = await travelPATCH(id, { status: currentStatus })
       if (response.status === 200) {
         toast("Status updated successfully!");
         fetchData();
@@ -390,12 +258,12 @@ const Table = () => {
                       key={index}
                       className="border-b hover:bg-fuchsia-50 transition duration-300 ease-in-out"
                     >
-                      <td className="p-4">{highlightMatch(item?.project_name, search)}</td>
-                      <td className="p-4">{highlightMatch(item?.user_name, search)}</td>
-                      <td className="p-4">{highlightMatch(item?.purpose, search)}</td>
-                      <td className="p-4">{highlightMatch(item?.start_location, search)}</td>
-                      <td className="p-4">{highlightMatch(item?.end_location, search)}</td>
-                      <td className="p-4">{highlightMatch(item?.mode, search)}</td>
+                      <td className="p-4">{item?.project_name}</td>
+                      <td className="p-4">{item?.user_name}</td>
+                      <td className="p-4">{item?.purpose}</td>
+                      <td className="p-4">{item?.start_location}</td>
+                      <td className="p-4">{item?.end_location}</td>
+                      <td className="p-4">{item?.mode}</td>
                       <td className="p-4">{item.date}</td>
                       <td className="p-4 ">{item.status ? <FaCheck color="green" /> : <FaTimes color="red" />}</td>
                       <td className="p-4">
@@ -454,39 +322,49 @@ const Table = () => {
 
 
       <Modal
-        style={{
-          content: {
-            width: "50%",
-            height: "60%",  // Adjust width as needed
-            maxWidth: "500px", // Optional: Set a max-width
-            margin: "auto", // Centers the modal
-          },
-        }}
-        isOpen={editStatusDialogOpen} onRequestClose={() => setEditStatusDialogOpen(false)} contentLabel="Edit Status">
-        <div className="p-4" style={{}}>
-          <h2 className="text-xl mb-4">Edit Status</h2>
+  style={{
+    content: {
+      width: "50%",
+      height: "60%",
+      maxWidth: "500px",
+      margin: "auto",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      borderRadius: "8px",
+      padding: "20px",
+    },
+  }}
+  isOpen={editStatusDialogOpen}
+  onRequestClose={() => setEditStatusDialogOpen(false)}
+  contentLabel="Edit Status"
+>
+  <div className="w-full max-w-md p-6">
+    <h2 className="text-xl font-semibold mb-4 text-center">Edit Status</h2>
 
-          <div style={{ width: "100%", display: "flex", justifyContent: "center", padding: 10 }}>
+    <div className="flex justify-center w-full mb-4">
+      <select
+        value={currentStatus}
+        onChange={(e) => setCurrentStatus(e.target.value)}
+        className="border p-2 rounded w-full max-w-xs"
+      >
+        <option value={true}>Approve</option>
+        <option value={false}>Reject</option>
+      </select>
+    </div>
 
-            <select
-              value={currentStatus}
-              onChange={(e) => { setCurrentStatus(e.target.value) }}
-              className="border p-2 rounded"
-            >
-              <option value={true}>Active</option>
-              <option value={false}>Inactive</option>
-            </select>
-          </div>
-          <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
-            <button
-              onClick={() => handleStatusChange(currentid)}
-              className="bg-green-500 text-white px-4 py-2 rounded"
-            >
-              Save Changes
-            </button>
-          </div>
-        </div>
-      </Modal>
+    <div className="flex justify-center w-full">
+      <button
+        onClick={() => handleStatusChange(currentid)}
+        className="bg-green-500 text-white px-4 py-2 rounded w-full max-w-xs hover:bg-green-600 transition"
+      >
+        Save Changes
+      </button>
+    </div>
+  </div>
+</Modal>
+
 
 
 

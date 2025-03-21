@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, UserProjects, Travel
+from .models import Project, Travel
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
@@ -7,11 +7,6 @@ class ProjectAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
     search_fields = ('name',)
 
-@admin.register(UserProjects)
-class UserProjectsAdmin(admin.ModelAdmin):
-    list_display = ('user',)
-    search_fields = ('user__username',)
-    filter_horizontal = ('project',) 
 
 @admin.register(Travel)
 class TravelAdmin(admin.ModelAdmin):

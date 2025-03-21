@@ -1,13 +1,13 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { loginUser, registerUser } from "../services/api";
+// import { loginUser, registerUser } from "../services/api";
 import { motion } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import home from "../assets/home.png";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import { useApi } from '../services/api';
 
 const AuthForm = () => {
   const [authData, setAuthData] = useState({ username: "", email_id:"",password: "" });
@@ -21,6 +21,7 @@ const AuthForm = () => {
   const [ passwordErrors,setPasswordErrors] = useState([]);
   const navigate = useNavigate();
 
+  const { loginUser, registerUser } = useApi();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -128,7 +129,7 @@ const AuthForm = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-5xl flex flex-wrap md:flex-nowrap bg-white shadow-2xl rounded-2xl overflow-hidden relative min-h-[520px] lg:min-h-[550px]"
       >
-        <div className="relative w-full md:w-1/2 min-h-[400px]">
+        <div className="relative w-full md:w-1/2 min-h-[600px]">
           <motion.div
             initial={{ x: 0, y: 0 }}
             animate={{
@@ -157,17 +158,30 @@ const AuthForm = () => {
   )}
 
 {isRegister && (
-    <div className="relative">
+  <>
+   <div class ="flex gap-10" >
       <input
-        type="email"
-        name="email_id"
-        placeholder="Email ID"
+        type="text"
+        name="first_name"
+        placeholder="First Name"
         className="border p-4 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300 shadow-sm border-gray-300"
-        value={authData.email_id}
+        value={authData.first_name}
         onChange={handleChange}
         required
       />
-    </div>
+  
+    <input
+      type="text"
+      name="last_name"
+      placeholder="Last Name"
+      className="border p-4 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300 shadow-sm border-gray-300"
+      value={authData.last_name}
+      onChange={handleChange}
+      required
+    />
+  </div>
+
+    </>
   )}
 
   <div className="relative">
